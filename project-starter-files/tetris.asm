@@ -62,11 +62,7 @@ ADDR_KBRD:
 
 	# Run the Tetris game.
 main:
-    jal initialize_border
-    jal initialize_grid
-    
-    li $v0, 10
-    syscall
+
 
 game_loop:
 	# 1a. Check if key has been pressed
@@ -77,4 +73,12 @@ game_loop:
 	# 4. Sleep
 
     #5. Go back to 1
+    
+    jal keyboardifying
+    
+    jal colour_board
+    
+    
+    
+    
     b game_loop
