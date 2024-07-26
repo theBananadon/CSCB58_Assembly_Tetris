@@ -96,6 +96,7 @@ initialize_border:
 	add $t5, $t0, SCREEN_WIDTH
 	addi $t6, $zero, 1024
 	add $t7, $t0, $t6
+	addi $t7, $t7, -4
 void_background_left:
 	blt $t0, $t7, floor
 	bgt $t0, $t4, floor
