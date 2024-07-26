@@ -62,8 +62,7 @@ ADDR_KBRD:
 
 	# Run the Tetris game.
 main:
-    jal initialize_border
-    jal initialize_grid
+    jal initialize
     
     li $v0, 10
     syscall

@@ -16,21 +16,77 @@
 ADDR_DSPL:
     .word 0x10008000
     
-    .eqv	BLUE	0x0000ff
-    .eqv	GREEN	0x00ff00
-    .eqv	RED	0xff0000
-    .eqv	BROWN	0xbca89f
-    .eqv	GREY	0xcccccc
-    .eqv	GROUND		3584
-    .eqv	SCREEN_WIDTH	4096
+    .eqv	BLUE		0x0000ff
+    .eqv	GREEN		0x00ff00
+    .eqv	RED		0xff0000
+    .eqv	BROWN		0x737373
+    .eqv	GRIDGREY	0xa8a8a8
+    .eqv	GROUND		15360
+    .eqv	SCREEN_WIDTH	16384
     .eqv	
 
     .text
-	.globl initialize_border
-	.globl initialize_grid
+	.globl initialize
     
 # Next section is dedicated to initializing border of game, 
 # uses only temp registers and has no return value
+initialize:
+	lw $t0, ADDR_DSPL       # $t0 = base address for display
+	li $t1, GRIDGREY
+	addi $t2, $zero, 16
+	addi $t3, $zero, 1008	#$t3 = 1024 - $2, to shift back due to initial shift
+	addi $t4, $zero, 0
+	add $t5, $t0, SCREEN_WIDTH
+grid_vertical:
+	bgt $t0, $t5, second_layer
+	bgt $t4, $t3, shift_total
+grid_print:
+	beq $t2, $t4, shift_local
+	sw $t1, 0($t0)      # paint the first unit on the second row blue
+	addi $t0, $t0, 4
+	addi $t4, $t4, 4
+	j grid_print
+shift_local:
+	addi $t0, $t0, 16
+	addi $t4, $t4, 16
+	addi $t2, $t2, 32	#$t2 = 2 $t4, to shift over extra
+	j grid_vertical
+shift_total:
+	addi $t6, $zero, 0
+	addi $t2, $zero, 16
+	addi $t4, $zero, 0
+	addi $t0, $t0, 1024
+	j grid_vertical
+
+second_layer:
+	lw $t0, ADDR_DSPL 
+	addi $t0, $t0, 1040      # $t0 = 1024 + $t2
+	li $t1, GRIDGREY
+	addi $t2, $zero, 16
+	addi $t3, $zero, 1008	#$t3 = 1024 - $t2
+	addi $t4, $zero, 0
+	add $t5, $t0, SCREEN_WIDTH
+grid_vertical_2:
+	bgt $t0, $t5, initialize_border
+	bgt $t4, $t3, shift_total_2
+grid_print_2:
+	beq $t2, $t4, shift_local_2
+	sw $t1, 0($t0)      # paint the first unit on the second row blue
+	addi $t0, $t0, 4
+	addi $t4, $t4, 4
+	j grid_print_2
+shift_local_2:
+	addi $t0, $t0, 16
+	addi $t4, $t4, 16
+	addi $t2, $t2, 32
+	j grid_vertical_2
+shift_total_2:
+	addi $t6, $zero, 0
+	addi $t2, $zero, 16
+	addi $t4, $zero, 0
+	addi $t0, $t0, 1024
+	j grid_vertical_2
+
 initialize_border:
 	lw $t0, ADDR_DSPL       # $t0 = base address for display
 	li $t1, BROWN
@@ -38,16 +94,17 @@ initialize_border:
 	addi $t3, $zero, 16
 	add $t4, $t0, GROUND
 	add $t5, $t0, SCREEN_WIDTH
-
+	addi $t6, $zero, 1024
+	add $t7, $t0, $t6
 void_background_left:
-	bgt $t0, $t4, void_background_right
+	blt $t0, $t7, floor
+	bgt $t0, $t4, floor
 	beq $t2, $t3, EQUALITY_left
 	sw $t1, 0($t0)      # paint the first unit on the second row blue
 	addi $t0, $t0, 4
 	addi $t2, $t2, 4
 	j void_background_left
 void_background_right:
-	bgt $t0, $t5, exit
 	beq $t2, $t3, EQUALITY_right
 	sw $t1, 0($t0)      # paint the first unit on the second row blue
 	addi $t0, $t0, 4
@@ -55,44 +112,22 @@ void_background_right:
 	j void_background_right
 EQUALITY_left:
 	addi $t2, $zero, 0
-	add $t0, $t0, $t3
-	add $t0, $t0, $t3
-	add $t0, $t0, $t3
-	add $t0, $t0, $t3
-	add $t0, $t0, $t3
-	add $t0, $t0, $t3
+	addi $t0, $t0, 224
 	j void_background_right
 EQUALITY_right:
 	addi $t2, $zero, 0
 	j void_background_left
-	
-# Next section dedicated to Initializing grid layout
-initialize_grid:
-	lw $t0, ADDR_DSPL       # $t0 = base address for display
-	li $t1, GREY
-	addi $t2, $zero, 0
-	addi $t3, $zero, 128
-	addi $t0, $t0, 512
-	addi $t4, $t0, SCREEN_WIDTH
-grid_horizontal:
-	bgt $t0, $t4, exit
-	bge $t2, $t3, next_grid_line_horizontal
-	lw $t5, 128($t0)
-	beq $t5, $zero, not_valid_location
-	sw $t1, 0($t0)
+floor:						#print floor
+	bgt $t0, $t5, exit
+	bgt $t0, $t4, skip			#to skip next call so it doesn't perma loop lon
+	bgt $t0, $t7, EQUALITY_right
+skip:
+	sw $t1, 0($t0)      # paint the first unit on the second row blue
 	addi $t0, $t0, 4
 	addi $t2, $t2, 4
-	j grid_horizontal
-not_valid_location:
-	addi $t0, $t0, 4
-	addi $t2, $t2, 4
-	j grid_horizontal
+	j floor
 	
 	
-next_grid_line_horizontal:
-	addi $t2, $zero, 0
-	addi $t0, $t0, 512
-	j grid_horizontal
 
 exit:
     jr $ra
