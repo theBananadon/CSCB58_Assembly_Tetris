@@ -13,24 +13,25 @@ ADDR_KBRD:
 
 
 keyboardifying:
-	li 		$v0, 32
-	li 		$a0, 1
-	syscall
-
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
-    lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
-    b main
+	addi $sp, $sp, -4
+    	sw $ra, 0($sp)
+	lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+	lw $t8, 0($t0)                  # Load first word from keyboard
+	beq $t8, 1, keyboard_input      # If first word 1, key is pressed
+	jr $ra
 
 keyboard_input:                     # A key is pressed
-    lw $a0, 4($t0)                  # Load second word from keyboard
-    beq $a0, 0x71, respond_to_Q     # Check if the key q was pressed
+	lw $a0, 4($t0)                  # Load second word from keyboard
+	
+	# list of possible commands and values
+	
+	beq $a0, 0x71, respond_to_Q     # q key: Pressing q results in game crashing
 
-    li $v0, 1                       # ask system to print $a0
-    syscall
-
-    b main
+	
+	
+	lw $ra, 0($sp)
+	jr $ra
 
 respond_to_Q:
-	li $v0, 10                      # Quit gracefully
-	syscall
+	li $v0, 10                      # Prepare to crash and burn
+	syscall				#call sis
