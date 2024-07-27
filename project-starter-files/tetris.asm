@@ -62,6 +62,9 @@ loop_State:
 
 block_Location:
 	.word	0, 0, 0, 0
+
+collision_map:
+	.word	0:1024
 ##############################################################################
 # Code
 ##############################################################################
@@ -80,6 +83,27 @@ main:
 	#		implementation at a rate not equal to the game tick rate
 	#	Variable 3: Block location array (int[4]) 
 	#		4 integers that store the location of each block of the tetromino
+	
+### initialize collision map by setting border to 1
+
+	jal initialize_collision_map
+
+###	
+	
+	#Testing tetromino stuff
+	
+	lw $t0, ADDR_DSPL
+	la $t1, block_Location
+	addi $t0, $t0, 1040
+	sw $t0, 0($t1)
+	addi $t0, $t0, 16
+	sw $t0, 4($t1)
+	addi $t0, $t0, 1024
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	
+	
 
 game_loop:
 	# 1a. Check if key has been pressed
@@ -90,29 +114,256 @@ game_loop:
 	# 4. Sleep
 
     #5. Go back to 1
-    
+### Triple Hashtags used in tetris.asm file to represent temporary register scope, 
 	jal keyboardifying
 	addi $sp, $sp, 4
+
+###
     
     # Collision is checked in keyboard.asm
-
+    
 	jal clear_board
 	addi $sp, $sp, 4
+
+###
 	jal colour_board
 	addi $sp, $sp, 4
-    
+
+### Update block location based on controls
+
+	
+	
+### erase current blocks location on collision map
+	jal current_block_map_location
+	addi $t2, $zero, 0
+	addi $t3, $zero, 4
+erase_loop:
+	lw $t0, 0($sp)
+	la $t1, collision_map
+	add $t1, $t0, $t1
+	lw $zero, 0($t1)
+	addi $sp, $sp, 4
+	addi $t2, $t2, 1
+	blt $t2, $t3, erase_loop
+	addi $sp, $sp, 16
+	
+	
+	
 	lh $t0, loop_State
-	addi $t1, $zero, 10
-	bne $t0, $t1, stop_chaos
-gravity_has_struck:
-	li $v0, 10
-	syscall
+	addi $t1, $zero, 10	# Loop number
+	bgt $t0, $t1, gravity
+
+return:
+
+### updating collision map
+	jal current_block_map_location
+	
+	
+### Painting block based on its updated location
+	la $t1, block_Location
+	lw $t0, 0($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+### 
+	
+	la $t1, block_Location
+	lw $t0, 4($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+
+### 
+	la $t1, block_Location	
+	lw $t0, 8($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+### 
+	la $t1, block_Location
+	lw $t0, 12($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
     
-stop_chaos:
+### Next loop state
+
+	lh $t0, loop_State
 	addi $t0, $t0, 1
 	sh $t0, loop_State
-    
+	
+###
+
 	li $v0, 32
 	addi $a0, $zero, 100
 	syscall
 	b game_loop
+
+
+
+
+
+
+
+###
+
+# current block map location, required to be called from other place, returns 4 integers in stack corresponding to the 4 locations in the 
+# collision map that the current block is located
+current_block_map_location:
+	# Store location of each collision map point in stack and access from there whenever needed
+	addi $t7, $zero, 0
+	addi $t8, $zero, 4
+	la $t1, block_Location
+	lw $t2, ADDR_DSPL
+current_block_map_location_loop:
+	# converts address of each block into its corresponding location in the collision map
+	lw $t0, 0($t1)
+	sub $t0, $t0, $t2	# get raw shifted value of the block
+	addi $t6, $zero, 1024
+	div $t0, $t6		# get row and column through remainder
+	mflo $t0
+	mfhi $t3
+	addi $t6, $zero, 16	# HATE, ANGER
+	div $t3, $t6		# divide by 16 to get exact column
+	mflo $t3
+	addi $t4, $zero, 16	# multiply row value by 16
+	mult $t0, $t4
+	mflo $t0
+	add $t0, $t0, $t3	
+	addi $t4, $zero, 4	# compensate for address being in .word
+	mult $t0, $t4
+	mflo $t0		# This (In theory), is the exact value in the collision map where this specific block is located
+				# Now if we temp store this in stack and repeat the above process a couple more times, we get the 
+				# The collision map location of every block
+	addi $sp, $sp, -4	# store in stack and whatnot
+	sw $t0, 0($sp)
+	addi $t7, $t7, 1
+	addi $t1, $t1, 4
+	blt $t7, $t8, current_block_map_location_loop
+	
+	jr $ra
+	
+	
+
+### Run gravity only if all 4 blocks below the main blcok is equal to 0
+gravity:
+	
+	jal current_block_map_location
+	addi $t6, $zero, 9
+	lw $t0, 0($sp)
+	addi $t0, $t0, 64
+	lw $t1, 4($sp)
+	addi $t1, $t1, 64
+	lw $t2, 8($sp)
+	addi $t2, $t2, 64
+	lw $t3, 12($sp)
+	addi $t3, $t3, 64
+	addi $sp, $sp, 16
+	la $t4, collision_map
+	add $t0, $t4, $t0
+	lw $t0, 0($t0)
+	add $t1, $t4, $t1
+	lw $t1, 0($t1)
+	add $t2, $t4, $t2
+	lw $t2, 0($t2)
+	add $t3, $t4, $t3
+	lw $t3, 0($t3)
+	bne $zero, $t0, return
+	bne $zero, $t1, return
+	bne $zero, $t2, return
+	bne $zero, $t3, return
+	
+
+
+gravity_has_struck:
+	la $t2, block_Location
+	lw $t3, 0($t2)
+	addi $t3, $t3, 1024
+	sw $t3, 0($t2)
+	
+	lw $t3, 4($t2)
+	addi $t3, $t3, 1024
+	sw $t3, 4($t2)
+	
+	lw $t3, 8($t2)
+	addi $t3, $t3, 1024
+	sw $t3, 8($t2)
+	
+	lw $t3, 12($t2)
+	addi $t3, $t3, 1024
+	sw $t3, 12($t2)
+	
+	addi $t0, $zero, 0
+	sh $t0, loop_State
+	
+	j return
+	
+	
+initialize_collision_map:
+	la $t0, collision_map
+	addi $t1, $zero, 1
+	sw $t1, 0($t0)
+	sw $t1, 4($t0)
+	sw $t1, 8($t0)
+	sw $t1, 12($t0)
+	sw $t1, 16($t0)
+	sw $t1, 20($t0)
+	sw $t1, 24($t0)
+	sw $t1, 28($t0)
+	sw $t1, 32($t0)
+	sw $t1, 36($t0)
+	sw $t1, 40($t0)
+	sw $t1, 44($t0)
+	sw $t1, 48($t0)
+	sw $t1, 52($t0)
+	sw $t1, 56($t0)
+	sw $t1, 60($t0)
+	sw $t1, 64($t0)
+	sw $t1, 124($t0)
+	sw $t1, 128($t0)
+	sw $t1, 188($t0)
+	sw $t1, 192($t0)
+	sw $t1, 252($t0)
+	sw $t1, 256($t0)
+	sw $t1, 316($t0)
+	sw $t1, 320($t0)
+	sw $t1, 380($t0)
+	sw $t1, 384($t0)
+	sw $t1, 444($t0)
+	sw $t1, 448($t0)
+	sw $t1, 508($t0)
+	sw $t1, 512($t0)
+	sw $t1, 572($t0)
+	sw $t1, 576($t0)
+	sw $t1, 636($t0)
+	sw $t1, 640($t0)
+	sw $t1, 700($t0)
+	sw $t1, 704($t0)
+	sw $t1, 764($t0)
+	sw $t1, 768($t0)
+	sw $t1, 828($t0)
+	sw $t1, 832($t0)
+	sw $t1, 892($t0)
+	sw $t1, 896($t0)
+	sw $t1, 956($t0)
+	sw $t1, 960($t0)
+	sw $t1, 964($t0)
+	sw $t1, 968($t0)
+	sw $t1, 972($t0)
+	sw $t1, 976($t0)
+	sw $t1, 980($t0)
+	sw $t1, 984($t0)
+	sw $t1, 988($t0)
+	sw $t1, 992($t0)
+	sw $t1, 996($t0)
+	sw $t1, 1000($t0)
+	sw $t1, 1004($t0)
+	sw $t1, 1008($t0)
+	sw $t1, 1012($t0)
+	sw $t1, 1016($t0)
+	sw $t1, 1020($t0)
+	jr $ra

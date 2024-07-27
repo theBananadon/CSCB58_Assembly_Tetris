@@ -28,9 +28,9 @@ ADDR_DSPL:
     .text
 	.globl colour_board
 	.globl clear_board
-    
-# Next section is dedicated to initializing border of game, 
-# uses only temp registers and has no return value
+	.globl paint_basic_tetromino_square
+
+# Colour_board: Base method of the bitmap_display, use to create grid. "Hardcoded" but math is very easy if we need to change
 colour_board:
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
@@ -62,7 +62,7 @@ shift_total:
 	j grid_vertical
 
 second_layer:
-	lw $t0, ADDR_DSPL 
+	lw $t0, ADDR_DSPL
 	addi $t0, $t0, 1040      # $t0 = 1024 + $t2
 	li $t1, GRIDGREY
 	addi $t2, $zero, 16
@@ -89,6 +89,12 @@ shift_total_2:
 	addi $t4, $zero, 0
 	addi $t0, $t0, 1024
 	j grid_vertical_2
+
+
+
+
+# colour_border, Used to colour game border, currently colours 1 pixel around edge, can change for fun
+
 
 colour_border:
 	lw $t0, ADDR_DSPL       # $t0 = base address for display
@@ -130,7 +136,16 @@ skip:
 	addi $t0, $t0, 4
 	addi $t2, $t2, 4
 	j floor
-	
+
+
+
+
+
+
+
+# Clear board before every repaint
+
+
 clear_board:
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
@@ -141,6 +156,32 @@ loop:
 	sw $zero, 0($t0)
 	addi $t0, $t0, 4
 	j loop
+
+
+
+
+
+paint_basic_tetromino_square:
+	lw $t0, 0($sp)
+	sw $ra, 0($sp)
+			# Technically not necessary, we could just manually run this 4 times, one for each piece, but thats a lot more work
+	li $t1, BLUE
+	addi $t2, $zero, 0
+	addi $t3, $zero, 16
+	addi $t4, $zero, 64
+tetro_loop:
+	beq $t2, $t4, exit
+	beq $t2, $t3, next_row
+	sw $t1, 0($t0)
+	addi $t2, $t2, 4
+	addi $t0, $t0, 4
+	j tetro_loop
+next_row:
+	addi $t0, $t0, 240	# 256 (1 row down) - 16 (1 square right)
+	addi $t3, $t3, 16	# 1 / 4 square
+	j tetro_loop
+
+
 
 exit:
     	jr $ra
