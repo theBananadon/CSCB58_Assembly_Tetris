@@ -27,12 +27,13 @@ ADDR_DSPL:
 
     .text
 	.globl colour_board
+	.globl clear_board
     
 # Next section is dedicated to initializing border of game, 
 # uses only temp registers and has no return value
 colour_board:
-	lw $t0, 0($sp)
-    	sw $ra, 0($sp)
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
 	lw $t0, ADDR_DSPL       # $t0 = base address for display
 	li $t1, GRIDGREY
 	addi $t2, $zero, 16
@@ -129,6 +130,17 @@ skip:
 	addi $t0, $t0, 4
 	addi $t2, $t2, 4
 	j floor
+	
+clear_board:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	lw $t0, ADDR_DSPL       # $t0 = base address for display
+	add $t1, $t0, SCREEN_WIDTH
+loop:
+	bgt $t0, $t1, exit
+	sw $zero, 0($t0)
+	addi $t0, $t0, 4
+	j loop
 
 exit:
     	jr $ra
