@@ -62,7 +62,17 @@ ADDR_KBRD:
 
 	# Run the Tetris game.
 main:
-
+	# Time to add some variables:
+	addi $sp, $sp, 20
+	# Explaination of variables:
+	#	Variable 1: Game state (short)
+	#		0: Game is paused
+	#		1: Game is playing
+	#	Variable 2: Loop state (short)
+	#		This is specifically for gravity or any other value that requires 
+	#		implementation at a rate not equal to the game tick rate
+	#	Variable 3: Block location array (int[4])
+	#		4 integers that store the location of each block of the tetromino
 
 game_loop:
 	# 1a. Check if key has been pressed
@@ -76,9 +86,12 @@ game_loop:
     
     jal keyboardifying
     
+    # Collision is checked in keyboard.asm
+    
     jal colour_board
     
     
-    
-    
+    li $v0, 32
+    addi $a0, $zero, 60
+    syscall
     b game_loop
