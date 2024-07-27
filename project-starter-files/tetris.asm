@@ -54,6 +54,14 @@ ADDR_KBRD:
 # Mutable Data
 ##############################################################################
 
+game_State:
+	.half	0
+
+loop_State:
+	.half	0
+
+block_Location:
+	.word	0, 0, 0, 0
 ##############################################################################
 # Code
 ##############################################################################
@@ -63,15 +71,14 @@ ADDR_KBRD:
 	# Run the Tetris game.
 main:
 	# Time to add some variables:
-	addi $sp, $sp, 20
 	# Explaination of variables:
-	#	Variable 1: Game state (short)
+	#	Variable 1: Game state (short) 
 	#		0: Game is paused
 	#		1: Game is playing
-	#	Variable 2: Loop state (short)
+	#	Variable 2: Loop state (short) 
 	#		This is specifically for gravity or any other value that requires 
 	#		implementation at a rate not equal to the game tick rate
-	#	Variable 3: Block location array (int[4])
+	#	Variable 3: Block location array (int[4]) 
 	#		4 integers that store the location of each block of the tetromino
 
 game_loop:
@@ -84,14 +91,28 @@ game_loop:
 
     #5. Go back to 1
     
-    jal keyboardifying
+	jal keyboardifying
+	addi $sp, $sp, 4
     
     # Collision is checked in keyboard.asm
     
-    jal colour_board
+	jal clear_board
+	addi $sp, $sp, 4
+	jal colour_board
+	addi $sp, $sp, 4
     
+	lh $t0, loop_State
+	addi $t1, $zero, 10
+	bne $t0, $t1, stop_chaos
+gravity_has_struck:
+	li $v0, 10
+	syscall
     
-    li $v0, 32
-    addi $a0, $zero, 60
-    syscall
-    b game_loop
+stop_chaos:
+	addi $t0, $t0, 1
+	sh $t0, loop_State
+    
+	li $v0, 32
+	addi $a0, $zero, 100
+	syscall
+	b game_loop
