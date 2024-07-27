@@ -95,7 +95,7 @@ game_loop:
 	addi $sp, $sp, 4
     
     # Collision is checked in keyboard.asm
-    
+
 	jal clear_board
 	addi $sp, $sp, 4
 	jal colour_board
