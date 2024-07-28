@@ -70,6 +70,8 @@ collision_map:
 ##############################################################################
 	.text
 	.globl main
+	.globl check_collision
+	.globl movement_is_happening
 
 	# Run the Tetris game.
 main:
@@ -150,8 +152,22 @@ erase_loop:
 	
 	
 	lh $t0, loop_State
-	addi $t1, $zero, 10	# Loop number
-	bgt $t0, $t1, check_collision
+	addi $t1, $zero, 1	# Loop number
+	ble $t0, $t1, return
+	
+	addi $t0, $zero, 0
+	sh $t0, loop_State
+### General collision check process:
+#	1. Store number to objects new location in stack
+#	2. Call check_collision method
+#	3. If no collision took place, the program will automatically run the 
+#
+#
+	addi $sp, $sp, -8
+	addi $t0, $zero, 64
+	sw $t0, 0($sp)
+	jal check_collision
+	b movement_is_happening
 
 return:
 
@@ -250,18 +266,19 @@ current_block_map_location_loop:
 	
 
 ### Run gravity only if all 4 blocks below the main blcok is equal to 0
+# Requires 1 input, 64 for gravity and s press, 4 for d press, -4 for w press
 check_collision:
-	
+	sw $ra, 4($sp)
 	jal current_block_map_location
-	addi $t6, $zero, 9
+	lw $t5, 16($sp)
 	lw $t0, 0($sp)
-	addi $t0, $t0, 64
+	add $t0, $t0, $t5
 	lw $t1, 4($sp)
-	addi $t1, $t1, 64
+	add $t1, $t1, $t5
 	lw $t2, 8($sp)
-	addi $t2, $t2, 64
+	add $t2, $t2, $t5
 	lw $t3, 12($sp)
-	addi $t3, $t3, 64
+	add $t3, $t3, $t5
 	addi $sp, $sp, 16
 	la $t4, collision_map
 	add $t0, $t4, $t0
@@ -276,30 +293,46 @@ check_collision:
 	bne $zero, $t1, return
 	bne $zero, $t2, return
 	bne $zero, $t3, return
-	
+	lw $ra, 4($sp)
+	lw $t0, 0($sp)
+	sw $t0, 4($sp)
+	addi $sp, $sp, 4
+	jr $ra
 	
 
 
-gravity_has_struck:
+movement_is_happening:
+	lw $t4, 0($sp)
+	addi $sp, $sp, 4
+	addi $t5, $zero, 64
+	beq $t4, $t5, down
+	
+	addi $t5, $zero, 4
+	mult $t4, $t5
+	mflo $t4
+	j normal
+down:
+	addi $t5, $zero, 16
+	mult $t4, $t5
+	mflo $t4
+
+normal:
 	la $t2, block_Location
 	lw $t3, 0($t2)
-	addi $t3, $t3, 1024
+	add $t3, $t3, $t4
 	sw $t3, 0($t2)
 	
 	lw $t3, 4($t2)
-	addi $t3, $t3, 1024
+	add $t3, $t3, $t4
 	sw $t3, 4($t2)
 	
 	lw $t3, 8($t2)
-	addi $t3, $t3, 1024
+	add $t3, $t3, $t4
 	sw $t3, 8($t2)
 	
 	lw $t3, 12($t2)
-	addi $t3, $t3, 1024
+	add $t3, $t3, $t4
 	sw $t3, 12($t2)
-	
-	addi $t0, $zero, 0
-	sh $t0, loop_State
 	
 	j return
 	
