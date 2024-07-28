@@ -49,6 +49,14 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
+   
+    .eqv	BLUE		0x0000ff
+    .eqv	GREEN		0x00ff00
+    .eqv	RED		0xff0000
+    .eqv	GREY		0x737373
+    .eqv	GRIDGREY	0xa8a8a8
+    .eqv	GROUND		15360
+    .eqv	SCREEN_WIDTH	16384
 
 ##############################################################################
 # Mutable Data
@@ -72,6 +80,7 @@ collision_map:
 	.globl main
 	.globl check_collision
 	.globl movement_is_happening
+	.globl collision_map
 
 	# Run the Tetris game.
 main:
@@ -124,12 +133,6 @@ game_loop:
     
     # Collision is checked in keyboard.asm
     
-	jal clear_board
-	addi $sp, $sp, 4
-
-###
-	jal colour_board
-	addi $sp, $sp, 4
 
 ### Update block location based on controls
 
@@ -153,7 +156,7 @@ erase_loop:
 	
 	lh $t0, loop_State
 	addi $t1, $zero, 1	# Loop number
-	ble $t0, $t1, return
+	ble $t0, $t1, skip_gravity_return
 	
 	addi $t0, $zero, 0
 	sh $t0, loop_State
@@ -163,17 +166,24 @@ erase_loop:
 #	3. If no collision took place, the program will automatically run the 
 #
 #
+
+return:
 	addi $sp, $sp, -8
 	addi $t0, $zero, 64
 	sw $t0, 0($sp)
 	jal check_collision
 	b movement_is_happening
 
-return:
+skip_gravity_return:
 
 ### updating collision map
 
-	
+	jal clear_board
+	addi $sp, $sp, 4
+
+###
+	jal colour_board
+	addi $sp, $sp, 4
 	
 ### Painting block based on its updated location
 	la $t1, block_Location
@@ -289,10 +299,10 @@ check_collision:
 	lw $t2, 0($t2)
 	add $t3, $t4, $t3
 	lw $t3, 0($t3)
-	bne $zero, $t0, return
-	bne $zero, $t1, return
-	bne $zero, $t2, return
-	bne $zero, $t3, return
+	bne $zero, $t0, check_if_stop
+	bne $zero, $t1, check_if_stop
+	bne $zero, $t2, check_if_stop
+	bne $zero, $t3, check_if_stop
 	lw $ra, 4($sp)
 	lw $t0, 0($sp)
 	sw $t0, 4($sp)
@@ -300,6 +310,9 @@ check_collision:
 	jr $ra
 	
 
+
+check_if_stop:
+	j return
 
 movement_is_happening:
 	lw $t4, 0($sp)
@@ -315,7 +328,26 @@ down:
 	addi $t5, $zero, 16
 	mult $t4, $t5
 	mflo $t4
-
+	
+	la $t2, block_Location
+	lw $t3, 0($t2)
+	add $t3, $t3, $t4
+	sw $t3, 0($t2)
+	
+	lw $t3, 4($t2)
+	add $t3, $t3, $t4
+	sw $t3, 4($t2)
+	
+	lw $t3, 8($t2)
+	add $t3, $t3, $t4
+	sw $t3, 8($t2)
+	
+	lw $t3, 12($t2)
+	add $t3, $t3, $t4
+	sw $t3, 12($t2)
+	
+	j skip_gravity_return
+	
 normal:
 	la $t2, block_Location
 	lw $t3, 0($t2)
@@ -339,7 +371,7 @@ normal:
 	
 initialize_collision_map:
 	la $t0, collision_map
-	addi $t1, $zero, 1
+	li $t1, GREY
 	sw $t1, 0($t0)
 	sw $t1, 4($t0)
 	sw $t1, 8($t0)

@@ -19,11 +19,10 @@ ADDR_DSPL:
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
     .eqv	RED		0xff0000
-    .eqv	BROWN		0x737373
+    .eqv	GREY		0x737373
     .eqv	GRIDGREY	0xa8a8a8
     .eqv	GROUND		15360
     .eqv	SCREEN_WIDTH	16384
-    .eqv	
 
     .text
 	.globl colour_board
@@ -70,7 +69,7 @@ second_layer:
 	addi $t4, $zero, 0
 	add $t5, $t0, SCREEN_WIDTH
 grid_vertical_2:
-	bgt $t0, $t5, colour_border
+	bgt $t0, $t5, colour_with_map
 	bgt $t4, $t3, shift_total_2
 grid_print_2:
 	beq $t2, $t4, shift_local_2
@@ -92,56 +91,60 @@ shift_total_2:
 
 
 
-
-# colour_border, Used to colour game border, currently colours 1 pixel around edge, can change for fun
-
-
-colour_border:
-	lw $t0, ADDR_DSPL       # $t0 = base address for display
-	li $t1, BROWN
+# colour_with_map: Colours board with collision map
+colour_with_map:
+	lw $t0, ADDR_DSPL       # Set values for every value, note, 
+				# collision_map + $t2 = collision_map[i][j] = ADDR_DSPL + 1024 * j + 16 * i 
+				# = ADDR_DSPL + 1024 * ($t2) // 64 + 4 * ($t2) mod 64
+	la $t1, collision_map
 	addi $t2, $zero, 0
-	addi $t3, $zero, 16
-	add $t4, $t0, GROUND
-	add $t5, $t0, SCREEN_WIDTH
-	addi $t6, $zero, 1024
-	add $t7, $t0, $t6
-	addi $t7, $t7, -4
-void_background_left:
-	blt $t0, $t7, floor
-	bgt $t0, $t4, floor
-	beq $t2, $t3, EQUALITY_left
-	sw $t1, 0($t0)      # paint the first unit on the second row blue
-	addi $t0, $t0, 4
+	addi $t3, $zero, 64
+	add $t4, $zero, 1024
+	
+colour_with_map_loop:
+	bge $t2, $t4, exit
+	lw $t9, 0($t1)
+	beq $t9, $zero, colour_with_map_loop_end
+	# converting coordinates from $t2 to bitmap
+	addi $t6, $zero, 4
+	div $t2, $t3
+	mflo $t7
+	mfhi $t8
+	mult $t7, $t4
+	mflo $t7
+	mult $t8, $t6
+	mflo $t8		# convert $t2 coordinate into values usable by bitmap
+	add $t8, $t7, $t8	# add values together into ADDR_DSPL to get location of next display point.
+				# DO NOT ERASE $t8 UNTIL NEXT ITERATION
+	add $t8, $t8, $t0	 
+	
+	
+	
+	# Variables $t5-$t8 are now free do be used as needed
+	addi $t5, $zero, 0	#loop variable
+	addi $t6, $zero, 16	#loop repeat
+	
+	
+colour_with_map_loop_loop:
+	bge $t5, $t3, colour_with_map_loop_end
+	bge $t5, $t6, colour_with_map_loop_loop_end
+	sw $t9, 0($t8)
+	addi $t8, $t8, 4
+	addi $t5, $t5, 4
+	j colour_with_map_loop_loop
+	
+colour_with_map_loop_loop_end:
+	addi $t6, $t6, 16
+	addi $t8, $t8, 240
+	j colour_with_map_loop_loop
+
+colour_with_map_loop_end:
 	addi $t2, $t2, 4
-	j void_background_left
-void_background_right:
-	beq $t2, $t3, EQUALITY_right
-	sw $t1, 0($t0)      # paint the first unit on the second row blue
-	addi $t0, $t0, 4
-	addi $t2, $t2, 4
-	j void_background_right
-EQUALITY_left:
-	addi $t2, $zero, 0
-	addi $t0, $t0, 224
-	j void_background_right
-EQUALITY_right:
-	addi $t2, $zero, 0
-	j void_background_left
-floor:						#print floor
-	bgt $t0, $t5, exit
-	bgt $t0, $t4, skip			#to skip next call so it doesn't perma loop lon
-	bgt $t0, $t7, EQUALITY_right
-skip:
-	sw $t1, 0($t0)      # paint the first unit on the second row blue
-	addi $t0, $t0, 4
-	addi $t2, $t2, 4
-	j floor
-
-
-
-
-
-
+	addi $t1, $t1, 4
+	j colour_with_map_loop
+	
+	
+	
 
 # Clear board before every repaint
 
@@ -181,6 +184,8 @@ next_row:
 	addi $t3, $t3, 16	# 1 / 4 square
 	j tetro_loop
 
+
+#Basic exit for all values
 
 
 exit:
