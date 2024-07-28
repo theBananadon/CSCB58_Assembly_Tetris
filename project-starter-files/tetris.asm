@@ -145,18 +145,18 @@ erase_loop:
 	addi $sp, $sp, 4
 	addi $t2, $t2, 1
 	blt $t2, $t3, erase_loop
-	addi $sp, $sp, 16
+
 	
 	
 	
 	lh $t0, loop_State
 	addi $t1, $zero, 10	# Loop number
-	bgt $t0, $t1, gravity
+	bgt $t0, $t1, check_collision
 
 return:
 
 ### updating collision map
-	jal current_block_map_location
+
 	
 	
 ### Painting block based on its updated location
@@ -250,7 +250,7 @@ current_block_map_location_loop:
 	
 
 ### Run gravity only if all 4 blocks below the main blcok is equal to 0
-gravity:
+check_collision:
 	
 	jal current_block_map_location
 	addi $t6, $zero, 9
@@ -276,6 +276,7 @@ gravity:
 	bne $zero, $t1, return
 	bne $zero, $t2, return
 	bne $zero, $t3, return
+	
 	
 
 
