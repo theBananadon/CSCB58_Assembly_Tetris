@@ -168,7 +168,8 @@ paint_basic_tetromino_square:
 	lw $t0, 0($sp)
 	sw $ra, 0($sp)
 			# Technically not necessary, we could just manually run this 4 times, one for each piece, but thats a lot more work
-	li $t1, BLUE
+	la $t1, block_Location
+	lw $t1, 16($t1)
 	addi $t2, $zero, 0
 	addi $t3, $zero, 16
 	addi $t4, $zero, 64

@@ -69,8 +69,32 @@ loop_State:
 	.half	0
 
 block_Location:
-	.word	0, 0, 0, 0
+	.word	0, 0, 0, 0, 0
 
+zig_zag_1:
+	.word	0, 0, 0, 0, 0
+	
+zig_zag_2:
+	.word	0, 0, 0, 0, 0
+
+T_cell:
+	.word	0, 0, 0, 0, 0
+
+I_am_square:
+	.word	0, 0, 0, 0, 0
+
+l_plus_ration:
+	.word	0, 0, 0, 0, 0
+	
+J_plus_ration:
+	.word	0, 0, 0, 0, 0
+	
+straight_edge:
+	.word	0, 0, 0, 0, 0
+	
+	
+
+	
 collision_map:
 	.word	0:1024
 ##############################################################################
@@ -80,6 +104,7 @@ collision_map:
 	.globl main
 	.globl check_collision
 	.globl movement_is_happening
+	.globl block_Location
 	.globl collision_map
 
 	# Run the Tetris game.
@@ -98,6 +123,7 @@ main:
 ### initialize collision map by setting border to 1
 
 	jal initialize_collision_map
+	jal initialize_blocks
 
 ###	
 	
@@ -113,6 +139,8 @@ main:
 	sw $t0, 8($t1)
 	addi $t0, $t0, 16
 	sw $t0, 12($t1)
+	li $t0, BLUE
+	sw $t0, 16($t1)
 	
 	
 
@@ -258,7 +286,7 @@ current_block_map_location_loop:
 	mflo $t3
 	addi $t4, $zero, 16	# multiply row value by 16
 	mult $t0, $t4
-	mflo $t0
+	mflo $t0		
 	add $t0, $t0, $t3	
 	addi $t4, $zero, 4	# compensate for address being in .word
 	mult $t0, $t4
@@ -309,10 +337,100 @@ check_collision:
 	addi $sp, $sp, 4
 	jr $ra
 	
-
+### if check_if_stop runs, movement is automatically terminated
+# this method is to check to see if the next block should be generated
 
 check_if_stop:
-	j return
+	lw $t0, 0($sp)
+	addi $t1, $zero, 64
+	addi $sp, $sp, 8
+	bne $t0, $t1, return
+	jal current_block_map_location
+	la $t1, block_Location
+	la $t2, collision_map
+	lw $t1, 16($t1)
+	lw $t0, 0($sp)		# Put all the colour onto the map
+	add $t0, $t0, $t2
+	sw $t1, 0($t0)
+	addi $sp, $sp, 4
+	lw $t0, 0($sp)
+	add $t0, $t0, $t2
+	sw $t1, 0($t0)
+	add $sp, $sp, 4
+	lw $t0, 0($sp)
+	add $t0, $t0, $t2
+	sw $t1, 0($t0)
+	addi $sp, $sp, 4
+	lw $t0, 0($sp)
+	add $t0, $t0, $t2
+	sw $t1, 0($t0)
+	addi $sp, $sp, 4
+	
+create_random_new_location:
+	li $v0, 42
+	addi $a1, $zero, 7
+	syscall
+	addi $t0, $zero, 0
+	beq $a0, $t0, zig_zag_1_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, zig_zag_2_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, T_cell_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, l_plus_ration_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, J_plus_ration_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, I_am_square_creater
+	addi $t0, $t0, 1
+	beq $a0, $t0, straight_edge_creater
+	
+	# if we somehow end up here, terminal error has occured and it may be over, so we kill the program
+	li $v0, 10
+	syscall
+	
+### Create random new block
+
+
+zig_zag_1_creater:
+	la $t0, zig_zag_1
+	j create_skip
+zig_zag_2_creater:
+	la $t0, zig_zag_2
+	j create_skip
+T_cell_creater:
+	la $t0, T_cell
+	j create_skip
+I_am_square_creater:
+	la $t0, I_am_square
+	j create_skip
+l_plus_ration_creater:
+	la $t0, l_plus_ration
+	j create_skip
+J_plus_ration_creater:
+	la $t0, J_plus_ration
+	j create_skip
+straight_edge_creater:
+	la $t0, straight_edge
+create_skip:	
+	la $t1, block_Location
+	lw $t2, 0($t0)
+	sw $t2, 0($t1)
+	lw $t2, 4($t0)
+	sw $t2, 4($t1)
+	lw $t2, 8($t0)
+	sw $t2, 8($t1)
+	lw $t2, 12($t0)
+	sw $t2, 12($t1)
+	lw $t2, 16($t0)
+	sw $t2, 16($t1)
+
+	j skip_gravity_return
+	
+
+
+
+
 
 movement_is_happening:
 	lw $t4, 0($sp)
@@ -432,4 +550,107 @@ initialize_collision_map:
 	sw $t1, 1012($t0)
 	sw $t1, 1016($t0)
 	sw $t1, 1020($t0)
+	jr $ra
+	
+	
+initialize_blocks:
+
+	# initialize zig zag 1
+	lw $t0, ADDR_DSPL
+	la $t1, zig_zag_1
+	addi $t0, $t0, 1136
+	sw $t0, 0($t1)
+	addi $t0, $t0, 16
+	sw $t0, 4($t1)
+	addi $t0, $t0, 1024
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, BLUE
+	sw $t0, 16($t1)
+	
+	# intialize zig zag 2
+	lw $t0, ADDR_DSPL
+	la $t1, zig_zag_2
+	addi $t0, $t0, 1152
+	sw $t0, 0($t1)
+	addi $t0, $t0, 16
+	sw $t0, 4($t1)
+	addi $t0, $t0, 992
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, GREEN
+	sw $t0, 16($t1)
+	
+	# intialize T cell
+	lw $t0, ADDR_DSPL
+	la $t1, T_cell
+	addi $t0, $t0, 1152
+	sw $t0, 0($t1)
+	addi $t0, $t0, 1008
+	sw $t0, 4($t1)
+	addi $t0, $t0, 16
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, RED
+	sw $t0, 16($t1)
+	
+	# intialize I am square
+	lw $t0, ADDR_DSPL
+	la $t1, I_am_square
+	addi $t0, $t0, 1152
+	sw $t0, 0($t1)
+	addi $t0, $t0, 16
+	sw $t0, 4($t1)
+	addi $t0, $t0, 1008
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, BLUE
+	sw $t0, 16($t1)
+	
+	# intialize l plus ration
+	lw $t0, ADDR_DSPL
+	la $t1, l_plus_ration
+	addi $t0, $t0, 1136
+	sw $t0, 0($t1)
+	addi $t0, $t0, 1024
+	sw $t0, 4($t1)
+	addi $t0, $t0, 16
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, GREEN
+	sw $t0, 16($t1)
+	
+	# intialize J plus ration
+	lw $t0, ADDR_DSPL
+	la $t1, J_plus_ration
+	addi $t0, $t0, 1168
+	sw $t0, 0($t1)
+	addi $t0, $t0, 992
+	sw $t0, 4($t1)
+	addi $t0, $t0, 16
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, RED
+	sw $t0, 16($t1)
+	
+	# intialize straight edge
+	lw $t0, ADDR_DSPL
+	la $t1, straight_edge
+	addi $t0, $t0, 1120
+	sw $t0, 0($t1)
+	addi $t0, $t0, 16
+	sw $t0, 4($t1)
+	addi $t0, $t0, 16
+	sw $t0, 8($t1)
+	addi $t0, $t0, 16
+	sw $t0, 12($t1)
+	li $t0, BLUE
+	sw $t0, 16($t1)
+	
 	jr $ra
