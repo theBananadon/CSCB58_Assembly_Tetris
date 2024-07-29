@@ -129,18 +129,7 @@ main:
 	
 	#Testing tetromino stuff
 	
-	lw $t0, ADDR_DSPL
-	la $t1, block_Location
-	addi $t0, $t0, 1040
-	sw $t0, 0($t1)
-	addi $t0, $t0, 16
-	sw $t0, 4($t1)
-	addi $t0, $t0, 1024
-	sw $t0, 8($t1)
-	addi $t0, $t0, 16
-	sw $t0, 12($t1)
-	li $t0, BLUE
-	sw $t0, 16($t1)
+	jal create_random_new_location
 	
 	
 
@@ -366,10 +355,109 @@ check_if_stop:
 	sw $t1, 0($t0)
 	addi $sp, $sp, 4
 	
+	j check_row_delete
+	
+### goes through every row and checks for row deletion
+# if row needs to be deleted, will call row delete function with given row input
+# starts checking from row 15 all the way till row 1
+check_row_delete:
+# create temporary variables
+	la $t0, collision_map
+	addi $t1, $zero, 64	
+	addi $t2, $zero, 56	# max column
+	addi $t3, $zero, 14	# row counting variable (stop when row = 0)
+	addi $t1, $zero, 64
+	mult $t3, $t1
+	mflo $t4
+	addi $t4, $t4, 4
+	la $t0, collision_map	# set $t0 as starting position
+	add $t0, $t0, $t4
+	addi $t1, $zero, 0	# column counting variable
+check_row_delete_loop:
+	# check if any given row has any 0's in it, if not, syscall 10
+	beq $t3, $zero, create_random_new_location	
+	beq $t1, $t2, check_row_delete_row
+	lw $t4, 0($t0)
+	beq $t4, $zero, check_row_delete_loop_end
+	addi $t0, $t0, 4
+	addi $t1, $t1, 4
+	j check_row_delete_loop
+
+	
+check_row_delete_loop_end:
+	sub $t3, $t3, 1
+	addi $t1, $zero, 64
+	mult $t3, $t1
+	mflo $t4
+	addi $t4, $t4, 4
+	la $t0, collision_map	# set back to prev row place 1
+	add $t0, $t0, $t4
+	addi $t1, $zero, 0
+	j check_row_delete_loop
+
+
+### section that deletes the row and shifts everything down 1, kind of similar implementation as check, except we dont check
+
+check_row_delete_row:
+	addi $sp, $sp, -4
+	sw $t3, 0($sp)
+	la $t0, collision_map
+	addi $t1, $zero, 64	
+	addi $t2, $zero, 56	# max column
+	sw $t3, 0($sp)		# row counting variable (stop when row = 1
+	addi $t1, $zero, 64
+	mult $t3, $t1
+	mflo $t4
+	addi $t4, $t4, 4
+	la $t0, collision_map	# set $t0 as starting position
+	add $t0, $t0, $t4
+	addi $t1, $zero, 0	# column counting variable
+	addi $t6, $zero, 1	# min row
+check_row_delete_row_loop:
+	# check if any given row has any 0's in it, if not, syscall 10
+	beq $t3, $t6, check_row_delete_row_end
+	beq $t1, $t2, check_row_delete_row_loop_end
+	sub $t4, $t0, 64	# shift up one row
+	lw $t4, 0($t4)		# load the above value into same reg
+	sw $t4, 0($t0)		# save that value into the row below
+	addi $t0, $t0, 4
+	addi $t1, $t1, 4
+	j check_row_delete_row_loop
+
+	
+check_row_delete_row_loop_end:
+	sub $t3, $t3, 1
+	addi $t1, $zero, 64
+	mult $t3, $t1
+	mflo $t4
+	addi $t4, $t4, 4
+	la $t0, collision_map	# set back to prev row place 1
+	add $t0, $t0, $t4
+	addi $t1, $zero, 0
+	j check_row_delete_row_loop
+	
+check_row_delete_row_end:
+	la $t0, collision_map
+	addi $t1, $zero, 64	
+	addi $t2, $zero, 56	# max column
+	lw $t3, 0($sp)		# current row stored in $t3
+	addi $sp, $sp, 4
+	addi $t1, $zero, 64
+	mult $t3, $t1
+	mflo $t4
+	addi $t4, $t4, 4
+	la $t0, collision_map	# set $t0 as starting position
+	add $t0, $t0, $t4
+	addi $t1, $zero, 0	# column counting variable
+	j check_row_delete_loop
+	
+### Name is self explanitory, Can be called from anywhere actually, since its a void function
+	
 create_random_new_location:
 	li $v0, 42
 	addi $a1, $zero, 7
 	syscall
+	addi $a0, $zero, 5
 	addi $t0, $zero, 0
 	beq $a0, $t0, zig_zag_1_creater
 	addi $t0, $t0, 1
