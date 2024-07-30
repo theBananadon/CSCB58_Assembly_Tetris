@@ -1,7 +1,7 @@
 #####################################################################
 # CSCB58 Summer 2024 Assembly Final Project - UTSC
-# Student1: Name, Student Number, UTorID, official email
-# Student2: Name, Student Number, UTorID, official email
+# Student1: Burhanuddin Dalal, 1010290365, b.dalal@mail.utoronto.ca
+# Student2: Dushaan ..., Student Number, UTorID, official email
 #
 # Bitmap Display Configuration:
 # - Unit width in pixels: 4 (update this as needed) 
@@ -12,16 +12,16 @@
 #
 # Which milestones have been reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1/2/3/4/5 (choose the one the applies)
+# - Milestone 1 
 #
 # Which approved features have been implemented?
 # (See the assignment handout for the list of features)
 # Easy Features:
-# 1. (fill in the feature, if any)
-# 2. (fill in the feature, if any)
+# 1. Gravity Implementation
+# 2. Give all Tetromino's unique colours that are unique
 # ... (add more if necessary)
 # Hard Features:
-# 1. (fill in the feature, if any)
+# 1. Implement all Tetromino's
 # 2. (fill in the feature, if any)
 # ... (add more if necessary)
 # How to play:
@@ -53,6 +53,10 @@ ADDR_KBRD:
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
     .eqv	RED		0xff0000
+    .eqv 	THIS		0xff0ff0
+    .eqv	WHATEVER	0x0a2c78
+    .eqv	COLOURS		0xa4d1bb
+    .eqv	IDKMAN		0x2db9a2
     .eqv	GREY		0x737373
     .eqv	GRIDGREY	0xa8a8a8
     .eqv	GROUND		15360
@@ -457,7 +461,6 @@ create_random_new_location:
 	li $v0, 42
 	addi $a1, $zero, 7
 	syscall
-	addi $a0, $zero, 5
 	addi $t0, $zero, 0
 	beq $a0, $t0, zig_zag_1_creater
 	addi $t0, $t0, 1
@@ -696,7 +699,7 @@ initialize_blocks:
 	sw $t0, 8($t1)
 	addi $t0, $t0, 16
 	sw $t0, 12($t1)
-	li $t0, BLUE
+	li $t0, THIS
 	sw $t0, 16($t1)
 	
 	# intialize l plus ration
@@ -710,7 +713,7 @@ initialize_blocks:
 	sw $t0, 8($t1)
 	addi $t0, $t0, 16
 	sw $t0, 12($t1)
-	li $t0, GREEN
+	li $t0, WHATEVER
 	sw $t0, 16($t1)
 	
 	# intialize J plus ration
@@ -724,7 +727,7 @@ initialize_blocks:
 	sw $t0, 8($t1)
 	addi $t0, $t0, 16
 	sw $t0, 12($t1)
-	li $t0, RED
+	li $t0, COLOURS
 	sw $t0, 16($t1)
 	
 	# intialize straight edge
@@ -738,7 +741,7 @@ initialize_blocks:
 	sw $t0, 8($t1)
 	addi $t0, $t0, 16
 	sw $t0, 12($t1)
-	li $t0, BLUE
+	li $t0, IDKMAN
 	sw $t0, 16($t1)
 	
 	jr $ra
