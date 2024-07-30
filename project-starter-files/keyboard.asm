@@ -48,6 +48,7 @@ respond_to_A:
 	addi $sp, $sp, -8
 	addi $t0, $zero, -4
 	sw $t0, 0($sp)
+	addi $a0, $zero, 0
 	jal check_collision
 	b movement_is_happening
 	
@@ -55,6 +56,7 @@ respond_to_D:
 	addi $sp, $sp, -8
 	addi $t0, $zero, 4
 	sw $t0, 0($sp)
+	addi $a0, $zero, 0
 	jal check_collision
 	b movement_is_happening
 	
@@ -62,6 +64,7 @@ respond_to_S:
 	addi $sp, $sp, -8
 	addi $t0, $zero, 64
 	sw $t0, 0($sp)
+	addi $a0, $zero, 0
 	jal check_collision
 	b movement_is_happening
 

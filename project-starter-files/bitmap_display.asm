@@ -28,8 +28,8 @@ ADDR_DSPL:
     .text
 	.globl colour_board
 	.globl clear_board
-	.globl paint_basic_tetromino_square
 	.globl print_pause
+	.globl print_current_tetromino
 
 # Colour_board: Base method of the bitmap_display, use to create grid. "Hardcoded" but math is very easy if we need to change
 colour_board:
@@ -223,6 +223,44 @@ print_pause_loop_if_2:
 print_pause_loop_end:
 	lw $ra, 0($sp)
 	j exit
+
+print_current_tetromino:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+### Painting block based on its updated location
+	la $t1, block_Location
+	lw $t0, 0($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+### 
+	
+	la $t1, block_Location
+	lw $t0, 4($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+
+### 
+	la $t1, block_Location	
+	lw $t0, 8($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+### 
+	la $t1, block_Location
+	lw $t0, 12($t1)
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal paint_basic_tetromino_square
+	addi $sp, $sp, 4
+    	
+    	lw $ra, 0($sp)
+    	addi $sp, $sp, 4
+    	jr $ra
 
 #Basic exit for all values
 

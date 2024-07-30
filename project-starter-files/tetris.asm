@@ -163,21 +163,8 @@ game_loop:
 
 	
 	
-### erase current blocks location on collision map
-	jal current_block_map_location
-	addi $t2, $zero, 0
-	addi $t3, $zero, 4
-erase_loop:
-	lw $t0, 0($sp)
-	la $t1, collision_map
-	add $t1, $t0, $t1
-	lw $zero, 0($t1)
-	addi $sp, $sp, 4
-	addi $t2, $t2, 1
-	blt $t2, $t3, erase_loop
 
-	
-	
+
 	
 	lh $t0, loop_State
 	addi $t1, $zero, 1	# Loop number
@@ -196,12 +183,13 @@ return:
 	addi $sp, $sp, -8
 	addi $t0, $zero, 64
 	sw $t0, 0($sp)
+	addi $a0, $zero, 0
 	jal check_collision
 	b movement_is_happening
 
 skip_gravity_return:
 
-### updating collision map
+### 
 
 	jal clear_board
 	addi $sp, $sp, 4
@@ -210,37 +198,7 @@ skip_gravity_return:
 	jal colour_board
 	addi $sp, $sp, 4
 	
-### Painting block based on its updated location
-	la $t1, block_Location
-	lw $t0, 0($t1)
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal paint_basic_tetromino_square
-	addi $sp, $sp, 4
-### 
-	
-	la $t1, block_Location
-	lw $t0, 4($t1)
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal paint_basic_tetromino_square
-	addi $sp, $sp, 4
-
-### 
-	la $t1, block_Location	
-	lw $t0, 8($t1)
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal paint_basic_tetromino_square
-	addi $sp, $sp, 4
-### 
-	la $t1, block_Location
-	lw $t0, 12($t1)
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal paint_basic_tetromino_square
-	addi $sp, $sp, 4
-    
+	jal print_current_tetromino
 ### Next loop state
 
 	lh $t0, loop_State
@@ -341,7 +299,9 @@ check_if_stop:
 	lw $t0, 0($sp)
 	addi $t1, $zero, 64
 	addi $sp, $sp, 8
-	bne $t0, $t1, return
+	bne $a0, $zero, game_over	# if our argument was set to 1, for instance if we just killed a block and now we want to check if 
+					# our new generated block spawns on another block, we check 
+	bne $t0, $t1, return		# if movement is not downwards movement, then we dont care, skip this 
 	jal current_block_map_location
 	la $t1, block_Location
 	la $t2, collision_map
@@ -519,6 +479,14 @@ create_skip:
 	sw $t2, 12($t1)
 	lw $t2, 16($t0)
 	sw $t2, 16($t1)
+	
+	addi $sp, $sp, -8
+	addi $t0, $zero, 0
+	sw $t0, 0($sp)
+	addi $a0, $zero, 1
+	jal check_collision
+	
+	
 
 	j skip_gravity_return
 	
@@ -581,6 +549,12 @@ normal:
 	
 	j return
 	
+
+game_over:
+	jal print_current_tetromino
+	li $v0, 10		# yeah you done goofed
+	syscall	
+
 	
 initialize_collision_map:
 	la $t0, collision_map
