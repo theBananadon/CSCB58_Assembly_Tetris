@@ -31,7 +31,7 @@
 # - (insert YouTube / MyMedia / other URL here). Make sure we can view it!
 #
 # Are you OK with us sharing the video with people outside course staff?
-# - yes / no
+# - no
 #
 # Any additional information that the TA needs to know:
 # - (write here, if any)
@@ -72,6 +72,9 @@ game_State:
 
 loop_State:
 	.half	0
+
+loop_Rate:
+	.half	1
 
 block_Location:
 	.word	0, 0, 0, 0, 0
@@ -132,6 +135,8 @@ main:
 
 	jal initialize_collision_map
 	jal initialize_blocks
+	lh $zero, loop_State
+	
 
 ###	
 	
@@ -167,7 +172,7 @@ game_loop:
 
 	
 	lh $t0, loop_State
-	addi $t1, $zero, 1	# Loop number
+	lh $t1, loop_Rate
 	ble $t0, $t1, skip_gravity_return
 	
 	addi $t0, $zero, 0
@@ -302,6 +307,7 @@ check_if_stop:
 	bne $a0, $zero, game_over	# if our argument was set to 1, for instance if we just killed a block and now we want to check if 
 					# our new generated block spawns on another block, we check 
 	bne $t0, $t1, return		# if movement is not downwards movement, then we dont care, skip this 
+	sh $zero, loop_State
 	jal current_block_map_location
 	la $t1, block_Location
 	la $t2, collision_map
@@ -552,6 +558,7 @@ normal:
 
 game_over:
 	jal print_current_tetromino
+	j game_over_loop
 	li $v0, 10		# yeah you done goofed
 	syscall	
 
@@ -619,6 +626,16 @@ initialize_collision_map:
 	sw $t1, 1012($t0)
 	sw $t1, 1016($t0)
 	sw $t1, 1020($t0)
+initialize_grid_clear:
+	addi $t2, $t0, 1024
+initialize_grid_clear_loop:
+	bge $t0, $t2, initialize_grid_clear_loop_end
+	lw $t3, 0($t0)
+	addi $t0, $t0, 4
+	beq $t3, $t1, initialize_grid_clear_loop
+	sw $zero, -4($t0)
+	j initialize_grid_clear_loop
+initialize_grid_clear_loop_end:
 	jr $ra
 	
 	

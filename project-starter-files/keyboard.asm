@@ -10,6 +10,7 @@ ADDR_KBRD:
 
     .text
 	.globl keyboardifying
+	.globl game_over_loop
 
 
 keyboardifying:
@@ -77,12 +78,26 @@ respond_to_P:
 	lw $t8, 0($t0)                  # Load first word from keyboard
 	bne $t8, 1, respond_to_P        # If first word 1, key is pressed
 	lw $a0, 4($t0)
+	beq $a0, 0x71, respond_to_Q	# quit if player feels like it
+	beq $a0, 0x72, respond_to_R	# restart game
 	bne $a0, 0x70, respond_to_P	# if letter pressed isn't P, go back to the beginning of the beginning
 	j skip_gravity_return	
+	
+game_over_loop:
+	lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+	lw $t8, 0($t0)                  # Load first word from keyboard
+	bne $t8, 1, game_over_loop        # If first word 1, key is pressed
+	lw $a0, 4($t0)
+	beq $a0, 0x71, respond_to_Q	# quit if player feels like it
+	bne $a0, 0x72, game_over_loop	# if letter pressed isn't P, go back to the beginning of the beginning
+	j main
 
 respond_to_Q:
 	li $v0, 10                      # Prepare to crash and burn
 	syscall				#call sis
+
+respond_to_R:
+	j main
 
 	
 	
