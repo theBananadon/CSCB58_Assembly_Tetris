@@ -19,6 +19,7 @@ ADDR_DSPL:
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
     .eqv	RED		0xff0000
+    .eqv 	PAUSE		0xffffff
     .eqv	GREY		0x737373
     .eqv	GRIDGREY	0xa8a8a8
     .eqv	GROUND		15360
@@ -190,6 +191,36 @@ next_row:
 print_pause:
 	sw $ra, 0($sp)
 # code to print pause screen here
+	lw $t0, ADDR_DSPL
+	addi $t0, $t0, 5200	# location of 5th block on fifth row ((5-1)*16 + (5-1)*1024)
+	addi $t1, $zero, 0	# column counting variable
+	addi $t2, $zero, 0	# row counting variable
+	addi $t3, $zero, 32	# column max
+	addi $t4, $zero, 64	# column max 2
+	addi $t5, $t0, 5982	# end address of loop
+	li $t6, PAUSE
+print_pause_loop:
+	bgt $t0, $t5, print_pause_loop_end
+	beq $t1, $t3, print_pause_loop_if_1
+	beq $t1, $t4, print_pause_loop_if_2
+	sw $t6, 0($t0)
+	addi $t1, $t1, 4
+	addi $t0, $t0, 4
+	j print_pause_loop
+	
+print_pause_loop_if_1:
+	addi $t0, $t0, 32
+	addi $t3, $zero, 0
+	j print_pause_loop
+print_pause_loop_if_2:
+	addi $t0, $t0, 160
+	addi $t3, $zero, 32
+	addi $t1, $zero, 0
+	j print_pause_loop
+	
+	
+	
+print_pause_loop_end:
 	lw $ra, 0($sp)
 	j exit
 
