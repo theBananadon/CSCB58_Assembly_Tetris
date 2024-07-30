@@ -34,7 +34,7 @@ keyboard_input:                     	# A key is pressed
 	beq $a0, 0x20, respond_to_SPACE		# space key: Pressing space when 
 						# 		game state is 1 gives us block falling down entire way
 						#		game state is 0 unpauses game
-	beq $a0, 0x50, respond_to_P		# p key: pressing p whene game state is 1 pauses game
+	beq $a0, 0x70, respond_to_P		# p key: pressing p whene game state is 1 pauses game
 	beq $a0, 0x71, respond_to_Q     	# q key: Pressing q results in game crashing
 	beq $a0, 0x73, respond_to_S		# s key: pressing s when game state is 1 gives us down movement
 
@@ -68,14 +68,18 @@ respond_to_S:
 respond_to_SPACE:
 
 respond_to_P:
+	addi $sp, $sp, -4
+	jal print_pause
+	lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+	lw $t8, 0($t0)                  # Load first word from keyboard
+	bne $t8, 1, respond_to_P        # If first word 1, key is pressed
+	lw $a0, 4($t0)
+	bne $a0, 0x70, respond_to_P	# if letter pressed isn't P, go back to the beginning of the beginning
+	j skip_gravity_return	
 
 respond_to_Q:
 	li $v0, 10                      # Prepare to crash and burn
 	syscall				#call sis
 
-check_movement_collision:
-	
-	
-update_collision_map:
 	
 	

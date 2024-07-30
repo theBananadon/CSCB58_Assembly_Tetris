@@ -28,6 +28,7 @@ ADDR_DSPL:
 	.globl colour_board
 	.globl clear_board
 	.globl paint_basic_tetromino_square
+	.globl print_pause
 
 # Colour_board: Base method of the bitmap_display, use to create grid. "Hardcoded" but math is very easy if we need to change
 colour_board:
@@ -185,6 +186,12 @@ next_row:
 	addi $t3, $t3, 16	# 1 / 4 square
 	j tetro_loop
 
+#print pause
+print_pause:
+	sw $ra, 0($sp)
+# code to print pause screen here
+	lw $ra, 0($sp)
+	j exit
 
 #Basic exit for all values
 

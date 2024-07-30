@@ -4,22 +4,23 @@
 # Student2: Dushaan ..., Student Number, UTorID, official email
 #
 # Bitmap Display Configuration:
-# - Unit width in pixels: 4 (update this as needed) 
-# - Unit height in pixels: 4 (update this as needed)
-# - Display width in pixels: 256 (update this as needed)
-# - Display height in pixels: 256 (update this as needed)
+# - Unit width in pixels: 4 
+# - Unit height in pixels: 4 
+# - Display width in pixels: 256 
+# - Display height in pixels: 256 
 # - Base Address for Display: 0x10008000 ($gp)
 #
 # Which milestones have been reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1 
+# - Milestone 1 (technically but like yknow)
 #
 # Which approved features have been implemented?
 # (See the assignment handout for the list of features)
 # Easy Features:
 # 1. Gravity Implementation
 # 2. Give all Tetromino's unique colours that are unique
-# ... (add more if necessary)
+# 3. 
+# 4. 
 # Hard Features:
 # 1. Implement all Tetromino's
 # 2. (fill in the feature, if any)
@@ -105,15 +106,18 @@ collision_map:
 # Code
 ##############################################################################
 	.text
+# global methods
 	.globl main
 	.globl check_collision
 	.globl movement_is_happening
+	.globl skip_gravity_return
+# global variables
 	.globl block_Location
 	.globl collision_map
 
 	# Run the Tetris game.
 main:
-	# Time to add some variables:
+	# Time to add some variables:	Update later for the stuff, currently inaccurate information
 	# Explaination of variables:
 	#	Variable 1: Game state (short) 
 	#		0: Game is paused
