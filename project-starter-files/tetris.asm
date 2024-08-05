@@ -7,7 +7,7 @@
 # - Unit width in pixels: 4 
 # - Unit height in pixels: 4 
 # - Display width in pixels: 256 
-# - Display height in pixels: 256 
+# - Display height in pixels: 512
 # - Base Address for Display: 0x10008000 ($gp)
 #
 # Which milestones have been reached in this submission?
@@ -19,8 +19,8 @@
 # Easy Features:
 # 1. Gravity Implementation
 # 2. Give all Tetromino's unique colours that are unique
-# 3. 
-# 4. 
+# 3. Implement pause feature
+# 4. Implemenet game over and retry feature
 # Hard Features:
 # 1. Implement all Tetromino's
 # 2. (fill in the feature, if any)
@@ -74,7 +74,7 @@ loop_State:
 	.half	0
 
 loop_Rate:
-	.half	1
+	.half	10
 
 block_Location:
 	.word	0, 0, 0, 0, 0
@@ -170,7 +170,7 @@ game_loop:
 	
 
 
-	
+return:
 	lh $t0, loop_State
 	lh $t1, loop_Rate
 	ble $t0, $t1, skip_gravity_return
@@ -184,7 +184,6 @@ game_loop:
 #
 #
 
-return:
 	addi $sp, $sp, -8
 	addi $t0, $zero, 64
 	sw $t0, 0($sp)
@@ -627,6 +626,7 @@ initialize_collision_map:
 	sw $t1, 1016($t0)
 	sw $t1, 1020($t0)
 initialize_grid_clear:
+	la $t0, collision_map
 	addi $t2, $t0, 1024
 initialize_grid_clear_loop:
 	bge $t0, $t2, initialize_grid_clear_loop_end

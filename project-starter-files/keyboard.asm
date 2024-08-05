@@ -84,12 +84,16 @@ respond_to_P:
 	j skip_gravity_return	
 	
 game_over_loop:
+	addi $sp, $sp, -4
+	jal print_game_over
+	addi $sp, $sp, 4
+restart_check:
 	lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
 	lw $t8, 0($t0)                  # Load first word from keyboard
-	bne $t8, 1, game_over_loop        # If first word 1, key is pressed
+	bne $t8, 1, restart_check       # If first word 1, key is pressed
 	lw $a0, 4($t0)
 	beq $a0, 0x71, respond_to_Q	# quit if player feels like it
-	bne $a0, 0x72, game_over_loop	# if letter pressed isn't P, go back to the beginning of the beginning
+	bne $a0, 0x72, restart_check	# if letter pressed isn't P, go back to the beginning of the beginning
 	j main
 
 respond_to_Q:

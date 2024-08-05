@@ -15,6 +15,20 @@
     .data
 ADDR_DSPL:
     .word 0x10008000
+   
+GAME_OVER_VALUES:	# hardcoded because it's easier to do
+	.half	2112, 2128, 2144, 3136, 4160, 4192, 5184, 5200, 5216, 	# G
+	7232, 7248, 7264, 8256, 8288, 9280, 9296, 9312, 10304, 10336,	# A
+	12336, 12352, 12384, 12400, 13360, 13392, 13424, 14384, 14448, 15408, 15472,	# M
+	17472, 17488, 17504, 18496, 19520, 19536, 20544, 21568, 21584, 21600,	# E
+	2192, 2208, 2224, 3216, 3248, 4240, 4272, 5264, 5280, 5296,	# O
+	7312, 7344, 8336, 8368, 9360, 9392, 10400,	#V
+	12432, 12448, 12464, 13456, 14480, 14496, 15504, 16528, 16544, 16560, 	# E
+	18576, 18592, 18608, 19600, 19632, 20624, 20640, 21648, 21680	#R
+	
+
+GAME_OVER_VALUES_LEN:
+	.word	76	0	# letters GAME OVE
     
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
@@ -24,12 +38,15 @@ ADDR_DSPL:
     .eqv	GRIDGREY	0xa8a8a8
     .eqv	GROUND		15360
     .eqv	SCREEN_WIDTH	16384
+    
+
 
     .text
 	.globl colour_board
 	.globl clear_board
 	.globl print_pause
 	.globl print_current_tetromino
+	.globl print_game_over
 
 # Colour_board: Base method of the bitmap_display, use to create grid. "Hardcoded" but math is very easy if we need to change
 colour_board:
@@ -104,7 +121,7 @@ colour_with_map:
 	add $t4, $zero, 1024
 	
 colour_with_map_loop:
-	bge $t2, $t4, exit
+	bge $t2, $t4, colour_bottom_screen
 	lw $t9, 0($t1)
 	beq $t9, $zero, colour_with_map_loop_end
 	# converting coordinates from $t2 to bitmap
@@ -119,10 +136,9 @@ colour_with_map_loop:
 	add $t8, $t7, $t8	# add values together into ADDR_DSPL to get location of next display point.
 				# DO NOT ERASE $t8 UNTIL NEXT ITERATION
 	add $t8, $t8, $t0	 
+
 	
-	
-	
-	# Variables $t5-$t8 are now free do be used as needed
+	# Variables $t5-$t7 are now free do be used as needed
 	addi $t5, $zero, 0	#loop variable
 	addi $t6, $zero, 16	#loop repeat
 	
@@ -146,6 +162,17 @@ colour_with_map_loop_end:
 	j colour_with_map_loop
 	
 	
+	
+colour_bottom_screen:
+	lw $t0, ADDR_DSPL
+	add $t0, $t0, SCREEN_WIDTH
+	add $t4, $t0, SCREEN_WIDTH
+	li $t1, GREY
+colour_bottom_screen_loop:
+	bge $t0, $t4, exit
+	sw $t1, 0($t0)
+	addi $t0, $t0, 4
+	j colour_bottom_screen_loop
 	
 
 # Clear board before every repaint
@@ -223,6 +250,40 @@ print_pause_loop_if_2:
 print_pause_loop_end:
 	lw $ra, 0($sp)
 	j exit
+
+
+print_game_over:
+	sw $ra, 0($sp)
+	# print the word game over or something like that
+	# maybe I should do score first
+	# Reg $t0 to $t4 is used in print square method so ill use $t5-$9 so i dont have to use stack
+	lw $s0, ADDR_DSPL
+	la $s1, block_Location
+	li $s2, PAUSE
+	sw $s2, 16($s1)
+	addi $s2, $zero, 0
+	lw $s4, GAME_OVER_VALUES_LEN
+	la $s5, GAME_OVER_VALUES	# set initial values
+print_game_over_loop:
+	bge $s2, $s4, print_game_over_loop_end
+	addi $sp, $sp, -4				# check if full array has been cursed through
+	
+	lh $t0, 0($s5)
+	add $s1, $s0, $t0
+	sw $s1, 0($sp)					# load address of letter location onto stack
+	jal paint_basic_tetromino_square		# call function that colours square
+	li $v0, 32
+	addi $a0, $zero, 25
+	syscall						# sleep for a sec
+	addi $sp, $sp, 4				# shift values forward
+	addi $s2, $s2, 1
+	addi $s5, $s5, 2
+	j print_game_over_loop
+	
+print_game_over_loop_end:
+	lw $ra 0($sp)
+	jr $ra
+
 
 print_current_tetromino:
 	addi $sp, $sp, -4
