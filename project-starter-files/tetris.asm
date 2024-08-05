@@ -1,7 +1,7 @@
 #####################################################################
 # CSCB58 Summer 2024 Assembly Final Project - UTSC
 # Student1: Burhanuddin Dalal, 1010290365, b.dalal@mail.utoronto.ca
-# Student2: Dushaan ..., Student Number, UTorID, official email
+# Student2: Dushaan Ketharan, 1007068815, kethara2, dushaan.ketharan@mail.utoronto.ca
 #
 # Bitmap Display Configuration:
 # - Unit width in pixels: 4 
