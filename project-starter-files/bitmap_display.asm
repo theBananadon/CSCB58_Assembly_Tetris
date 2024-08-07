@@ -16,7 +16,7 @@
 ADDR_DSPL:
     .word 0x10008000
    
-GAME_OVER_VALUES:	# hardcoded because it's easier to do
+GAME_OVER_VALUES:	# hardcoded because it's easier to do...
 	.half	2112, 2128, 2144, 3136, 4160, 4192, 5184, 5200, 5216, 	# G
 	7232, 7248, 7264, 8256, 8288, 9280, 9296, 9312, 10304, 10336,	# A
 	12336, 12352, 12384, 12400, 13360, 13392, 13424, 14384, 14448, 15408, 15472,	# M
@@ -28,14 +28,66 @@ GAME_OVER_VALUES:	# hardcoded because it's easier to do
 	
 
 GAME_OVER_VALUES_LEN:
-	.word	76	0	# letters GAME OVE
+	.word	76	0	# letters GAME OVER
+	
+# number vaule for score. To use, simply shift each spot by the distance from starting location of number
+#(i.e. if printing on address, 3096, add 3096 to all values in array and call paint tetro square on each)
+ZERO_VALUES:
+	.half	0, 16, 32, 1024, 1056, 2048, 2080, 3072, 3104, 4096, 4112, 4128 	# 0
+ZERO_LEN:
+	.half	12
+
+ONE_VALUES: 
+	.half	0, 16, 1040, 2064, 3088, 4096, 4112, 4128				# 1
+ONE_LEN:
+	.half	8
+	
+TWO_VALUES: 
+	.half	0, 16, 32, 1056, 2064, 3072, 4096, 4112, 4128				# 2
+TWO_LEN:
+	.half	9
+
+THREE_VALUES:
+	.half	0, 16, 32, 1056, 2064, 2080, 3104, 4096, 4112, 4128			# 3
+THREE_LEN:	
+	.half	10
+	
+FOUR_VALUES:
+	.half	0, 32, 1024, 1056, 2048, 2064, 2080, 3104, 4128				# 4
+FOUR_LEN:
+	.half	9
+
+FIVE_VALUES:
+	.half	0, 16, 32, 1024, 2064, 3104, 4096, 4112, 4128				# 5
+FIVE_LEN:
+	.half	9
+
+SIX_VALUES:
+	.half	0, 16, 32, 1024, 2048, 2064, 2080, 3072, 3104, 4096, 4112, 4128		# 6
+SIX_LEN:
+	.half	12
+
+SEVEN_VALUES:
+	.half	0, 16, 32, 1056, 2080, 3088, 4112					# 7
+SEVEN_LEN:
+	.half	7
+	
+EIGHT_VALUES:
+	.half	0, 16, 32, 1024, 1056, 2048, 2064, 2080, 3072, 3104, 4096, 4112, 4128 	# 8	
+EIGHT_LEN:
+	.half	13
+	
+NINE_VALUES:
+	.half	0, 16, 32, 1024, 1056, 2048, 2064, 2080, 3104, 4096, 4112, 4128 	# 9
+NINE_LEN:
+	.half	12	
     
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
     .eqv	RED		0xff0000
     .eqv 	PAUSE		0xffffff
-    .eqv	GREY		0x737373
-    .eqv	GRIDGREY	0xa8a8a8
+    .eqv	GREY		0x222222
+    .eqv	GRIDGREY	0x101010
     .eqv	GROUND		15360
     .eqv	SCREEN_WIDTH	16384
     
@@ -322,6 +374,39 @@ print_current_tetromino:
     	lw $ra, 0($sp)
     	addi $sp, $sp, 4
     	jr $ra
+
+
+print_player_score:
+# save ra and colour of current tetromino, and set block colour to white for paint_basic_tetro method
+	addi $sp, $sp, -8
+	sw $ra, 4($sp)
+	la $t0, block_Location
+	lw $t1, 16($t0)
+	lw $t1, 0($sp)
+	li $t1, PAUSE
+	sw $t1, 16($t0)
+	addi $t0, $zero, 0
+	addi $t1, $zero, 0
+	lw $t0, player_score
+print_player_score_loop_1:
+	addi $t1, $zero, 10
+	div $t0, $t1
+	mflo $t1
+	
+	
+	
+	
+	
+	
+	
+print_player_score_end:
+	la $t0, block_Location
+	lw $t1, 0($sp)
+	addi $sp, $sp, 4
+	sw $t1, 16($t0)
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
 
 #Basic exit for all values
 

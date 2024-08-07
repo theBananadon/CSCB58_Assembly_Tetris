@@ -58,8 +58,8 @@ ADDR_KBRD:
     .eqv	WHATEVER	0x0a2c78
     .eqv	COLOURS		0xa4d1bb
     .eqv	IDKMAN		0x2db9a2
-    .eqv	GREY		0x737373
-    .eqv	GRIDGREY	0xa8a8a8
+    .eqv	GREY		0x222222
+    .eqv	GRIDGREY	0x101010
     .eqv	GROUND		15360
     .eqv	SCREEN_WIDTH	16384
 
@@ -98,13 +98,15 @@ J_plus_ration:
 	.word	0, 0, 0, 0, 0
 	
 straight_edge:
-	.word	0, 0, 0, 0, 0
-	
+	.word	0, 0, 0, 0, 0	
 	
 
-	
+player_score:
+	.word 	0
+
 collision_map:
 	.word	0:1024
+
 ##############################################################################
 # Code
 ##############################################################################
@@ -117,6 +119,8 @@ collision_map:
 # global variables
 	.globl block_Location
 	.globl collision_map
+	.globl player_score
+	.globl ADDR_DSPL
 
 	# Run the Tetris game.
 main:
@@ -136,6 +140,7 @@ main:
 	jal initialize_collision_map
 	jal initialize_blocks
 	lh $zero, loop_State
+	lw $zero, player_score
 	
 
 ###	
@@ -305,6 +310,7 @@ check_if_stop:
 	addi $sp, $sp, 8
 	bne $a0, $zero, game_over	# if our argument was set to 1, for instance if we just killed a block and now we want to check if 
 					# our new generated block spawns on another block, we check 
+	beq $t0, $zero, rotator		# if $t0 = 0, we are rotating, so lets deal with that separately
 	bne $t0, $t1, return		# if movement is not downwards movement, then we dont care, skip this 
 	sh $zero, loop_State
 	jal current_block_map_location
@@ -347,7 +353,7 @@ check_row_delete:
 	add $t0, $t0, $t4
 	addi $t1, $zero, 0	# column counting variable
 check_row_delete_loop:
-	# check if any given row has any 0's in it, if not, syscall 10
+	# check if any given row has any 0's in it, if not, call delete row
 	beq $t3, $zero, create_random_new_location	
 	beq $t1, $t2, check_row_delete_row
 	lw $t4, 0($t0)
@@ -372,6 +378,11 @@ check_row_delete_loop_end:
 ### section that deletes the row and shifts everything down 1, kind of similar implementation as check, except we dont check
 
 check_row_delete_row:
+	lh $t0, player_score
+	addi $t0, $t0, 1
+	addi $t1, $zero, 100
+	bge $t0, $t1, game_over
+	sh $t0, player_score
 	addi $sp, $sp, -4
 	sw $t3, 0($sp)
 	la $t0, collision_map
@@ -496,9 +507,21 @@ create_skip:
 	j skip_gravity_return
 	
 
-
-
-
+rotator:
+	#revert the location of the block to what was saved in $s0-$s3 in prior
+	# w response method
+	la $t0, block_Location
+	lw $t1, ADDR_DSPL
+	add $s0, $s0, $t1
+	sw $s0, 0($t0)
+	add $s1, $s1, $t1
+	sw $s1, 4($t0)
+	add $s2, $s2, $t1
+	sw $s2, 8($t0)
+	add $s3, $s3, $t1
+	sw $s3, 12($t0)
+	addi $sp, $sp, 16
+	j return
 
 movement_is_happening:
 	lw $t4, 0($sp)
