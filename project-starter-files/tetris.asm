@@ -50,6 +50,29 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
+    
+notes:  
+    .word 76, 71, 72, 74, 76, 72, 71, 69, 69, 72, 76, 74, 72, 71, 71, 72, 74, 76, 72, 69, 69,
+          74, 77, 81, 79, 77, 76, 72, 76, 74, 72, 71, 71, 72, 74, 76, 72, 69, 69, 76, 71, 72, 
+          74, 76, 72, 69, 72, 76, 81, 80, 77, 76, 74, 72, 76, 75, 74, 73, 72, 69, 71, 72, 69, 
+          71, 64, 68, 71, 67, 69, 67, 65, 62, 69, 67, 65, 62, 64, 63, 64, 65, 68, 69, 71, 72, 
+          74, 72, 74, 72, 71, 69, 68, 64, 68, 69, 71, 72, 74, 75, 76, 80, 88, 76, 71, 72, 74, 76, 72, 71, 69, 69, 72, 76, 74, 72, 71, 71, 72, 74, 76, 72, 69, 69,
+          74, 77, 81, 79, 77, 76, 72, 76, 74, 72, 71, 71, 72, 74, 76, 72, 69, 69, 76, 71, 72, 
+          74, 76, 72, 69, 72, 76, 81, 80, 77, 76, 74, 72, 76, 75, 74, 73, 72, 69, 71, 72, 69, 
+          71, 64, 68, 71, 67, 69, 67, 65, 62, 69, 67, 65, 62, 64, 63, 64, 65, 68, 69, 71, 72, 
+          74, 72, 74, 72, 71, 69, 68, 64, 68, 69, 71, 72, 74, 75, 76, 80, 88
+
+durations:  
+    .word 200, 100, 100, 100, 100, 100, 100, 200, 100, 100, 200, 100, 100, 200, 100, 100, 200, 200, 200, 200, 400,
+          200, 100, 200, 100, 100, 200, 100, 200, 100, 100, 200, 100, 100, 200, 200, 200, 200, 400, 200, 100, 100, 
+          200, 200, 200, 100, 100, 200, 200, 200, 100, 100, 200, 200, 200, 200, 200, 200, 200, 200, 100, 100, 100, 
+          100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 400, 200, 100, 100, 100, 100, 100, 100, 200, 100, 100, 200, 100, 100, 200, 100, 100, 200, 200, 200, 200, 400,
+          200, 100, 200, 100, 100, 200, 100, 200, 100, 100, 200, 100, 100, 200, 200, 200, 200, 400, 200, 100, 100, 
+          200, 200, 200, 100, 100, 200, 200, 200, 100, 100, 200, 200, 200, 200, 200, 200, 200, 200, 100, 100, 100, 
+          100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 400
+          
+current_note_index:  .word 0
+remaining_pause_time: .word 0
    
     .eqv	BLUE		0x0000ff
     .eqv	GREEN		0x00ff00
@@ -158,6 +181,62 @@ game_loop:
 	# 2b. Update locations (paddle, ball)
 	# 3. Draw the screen
 	# 4. Sleep
+	
+### Music
+
+    # Check if it's time to play the next note
+    lw $t0, remaining_pause_time
+    bgtz $t0, update_pause_time
+
+    # Load the current note and duration
+    la $t0, notes                # Load address of the notes array
+    la $t1, durations            # Load address of the durations array
+    lw $t2, current_note_index
+    sll $t2, $t2, 2              # Multiply index by 4 to get the correct offset (4 bytes per word)
+    add $t0, $t0, $t2
+    add $t1, $t1, $t2
+    # Load the current note frequency and duration
+    lw $a0, 0($t0)          # Load current note frequency from notes array
+    lw $a1, 0($t1)          # Load current note duration from durations array
+    addi $t3, $zero, 1
+    mult $a1, $t3
+    mflo $a1
+    
+    # Set the duration as the remaining pause time
+    
+    sw $a1, remaining_pause_time
+
+    li $t3, 0                    # Instrument (0 = Acoustic Grand Piano)
+    li $t4, 100                  # Volume (100 = default volume)
+    # Increment current_note_index for the next note
+    lw $t2, current_note_index
+    addi $t2, $t2, 1
+    sw $t2, current_note_index
+
+    # Play the current note using the sound syscall
+    li $v0, 33                   # Sound output syscall code
+    move $a2, $t3                # Set instrument
+    move $a3, $t4                # Set volume
+    syscall	
+	
+update_pause_time:
+    # Decrement the remaining_pause_time
+    lw $t0, remaining_pause_time
+    addi $t0, $t0, -100
+    sw $t0, remaining_pause_time
+    lw $t0, current_note_index
+    addi $t1, $zero, 100
+    ble $t0, $t1, skip_reset_music
+    sw $zero, current_note_index
+    addi $t0, $t0, 400
+    sw $t0, remaining_pause_time
+    
+    
+skip_reset_music:
+    
+   
+   
+    
 
     #5. Go back to 1
 ### Triple Hashtags used in tetris.asm file to represent temporary register scope, 
@@ -171,8 +250,6 @@ game_loop:
 
 ### Update block location based on controls
 
-	
-	
 
 
 return:
@@ -182,6 +259,11 @@ return:
 	
 	addi $t0, $zero, 0
 	sh $t0, loop_State
+	lw $t0, player_score
+	addi $t1, $zero, 10
+	sub $t1, $t1, $t0
+	sh $t1, loop_Rate
+	
 ### General collision check process:
 #	1. Store number to objects new location in stack
 #	2. Call check_collision method
@@ -380,7 +462,7 @@ check_row_delete_loop_end:
 check_row_delete_row:
 	lh $t0, player_score
 	addi $t0, $t0, 1
-	addi $t1, $zero, 100
+	addi $t1, $zero, 10
 	bge $t0, $t1, game_over
 	sh $t0, player_score
 	addi $sp, $sp, -4

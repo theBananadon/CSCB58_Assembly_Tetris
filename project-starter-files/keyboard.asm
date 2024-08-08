@@ -176,7 +176,7 @@ convert_to_coordinate:
 	mult $t1, $t7
 	mflo $t7
 	add $t0, $t6, $t7
-	addi $t1, $zero, 16
+	addi $t1, $zero, 0
 	sub $t0, $t0, $t1	#$t0 shifted 16 left to account for rotating 90* clockwise
 	lw $t1, ADDR_DSPL
 	add $t0, $t0, $t1	# $t0 now holds the address of the rotated block.
@@ -220,7 +220,7 @@ convert_to_coordinate:
 	mult $t1, $t7
 	mflo $t7
 	add $t0, $t6, $t7
-	addi $t1, $zero, 16
+	addi $t1, $zero, 0
 	sub $t0, $t0, $t1	#$t0 shifted 16 left to account for rotating 90* clockwise
 	lw $t1, ADDR_DSPL
 	add $t0, $t0, $t1	# $t0 now holds the address of the rotated block.
@@ -262,7 +262,7 @@ convert_to_coordinate:
 	mult $t1, $t7
 	mflo $t7
 	add $t0, $t6, $t7
-	addi $t1, $zero, 16
+	addi $t1, $zero, 0
 	sub $t0, $t0, $t1	#$t0 shifted 16 left to account for rotating 90* clockwise
 	lw $t1, ADDR_DSPL
 	add $t0, $t0, $t1	# $t0 now holds the address of the rotated block.
@@ -272,7 +272,7 @@ convert_to_coordinate:
 	
 	# finally:
 	lw $t0, 0($t1)
-	addi $t2, $zero, 16
+	addi $t2, $zero, 0
 	sub $t0, $t0, $t2
 	sw $t0, 0($t1)
 	
